@@ -1,0 +1,2239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>POWIIS — Operation Donation Inventory</title>
+<style>
+  :root{
+    --paper: #e7e2d2;
+    --paper-light: #faf8f1;
+    --ink: #20261f;
+    --ink-soft: #5b5f4f;
+    --line: #c7bfa4;
+    --line-soft: #d8d2bc;
+    --crate: #3e5c4c;
+    --crate-dark: #2c4338;
+    --crate-tint: #e2e8e0;
+    --stamp: #a8452f;
+    --stamp-tint: #f3e2dc;
+    --amber: #b6852f;
+    --amber-tint: #f2e6cc;
+    --radius: 3px;
+    --serif: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Times New Roman', serif;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    min-height: 100vh;
+    background-image:
+      radial-gradient(circle at 1px 1px, rgba(32,38,31,0.06) 1px, transparent 0);
+    background-size: 22px 22px;
+  }
+
+  a { color: inherit; }
+
+  /* ---------- Header ---------- */
+
+  header.masthead {
+    border-bottom: 3px solid var(--ink);
+    background: var(--paper);
+    padding: 22px 28px 18px;
+  }
+
+  .masthead-inner {
+    max-width: 1180px;
+    margin: 0 auto;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .crate-mark {
+    width: 46px;
+    height: 46px;
+    flex-shrink: 0;
+  }
+
+  .brand-text .eyebrow {
+    font-family: var(--sans);
+    font-size: 12.5px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--crate);
+    margin: 0 0 2px;
+  }
+
+  .brand-text h1 {
+    font-family: var(--serif);
+    font-size: 30px;
+    font-weight: 700;
+    margin: 0;
+    line-height: 1.05;
+    letter-spacing: 0.01em;
+  }
+
+  nav.tabs {
+    display: flex;
+    gap: 8px;
+  }
+
+  .tab-btn {
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 600;
+    padding: 10px 16px;
+    border: 1.5px solid var(--ink);
+    background: var(--paper-light);
+    color: var(--ink);
+    border-radius: var(--radius);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+
+  .tab-btn:hover { background: var(--ink); color: var(--paper-light); }
+
+  .tab-btn.active {
+    background: var(--crate);
+    border-color: var(--crate);
+    color: var(--paper-light);
+  }
+
+  .tab-btn.staff-active {
+    background: var(--stamp);
+    border-color: var(--stamp);
+    color: var(--paper-light);
+  }
+
+  .tab-btn svg { width: 15px; height: 15px; }
+
+  main {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 26px 28px 80px;
+  }
+
+  /* ---------- Toolbar ---------- */
+
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    background: var(--paper-light);
+    border: 1.5px solid var(--line);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 22px;
+  }
+
+  .field-group { display: flex; flex-direction: column; gap: 4px; }
+
+  .field-group label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ink-soft);
+    letter-spacing: 0.02em;
+  }
+
+  .search-wrap { position: relative; flex: 1 1 240px; }
+
+  .search-wrap svg {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 15px;
+    height: 15px;
+    stroke: var(--ink-soft);
+    pointer-events: none;
+  }
+
+  input[type="text"], input[type="search"], input[type="number"], input[type="password"], select {
+    font-family: var(--sans);
+    font-size: 14px;
+    padding: 9px 10px;
+    border: 1.5px solid var(--line);
+    border-radius: var(--radius);
+    background: #fff;
+    color: var(--ink);
+    outline: none;
+  }
+
+  .search-wrap input { width: 100%; padding-left: 32px; }
+
+  input:focus, select:focus, textarea:focus, button:focus-visible {
+    border-color: var(--crate);
+    box-shadow: 0 0 0 3px var(--crate-tint);
+  }
+
+  select { min-width: 150px; cursor: pointer; }
+
+  .count-pill {
+    margin-left: auto;
+    font-size: 13px;
+    color: var(--ink-soft);
+    white-space: nowrap;
+    padding-top: 16px;
+  }
+
+  /* ---------- Tracker strip ---------- */
+
+  .tracker-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border: 1.5px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 22px;
+  }
+
+  .tracker-stat {
+    background: var(--paper-light);
+    padding: 16px 14px;
+    text-align: center;
+  }
+
+  .tracker-num {
+    font-family: var(--serif);
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--crate);
+  }
+
+  .tracker-label {
+    font-size: 11.5px;
+    color: var(--ink-soft);
+    margin-top: 2px;
+  }
+
+  @media (max-width: 640px) {
+    .tracker-strip { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* ---------- Grid ---------- */
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 16px;
+  }
+
+  .card {
+    background: var(--paper-light);
+    border: 1.5px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    animation: rise 0.35s ease backwards;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(32,38,31,0.12);
+  }
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .card-photo {
+    aspect-ratio: 1 / 1;
+    width: 100%;
+    background: var(--crate-tint);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    border-bottom: 1.5px solid var(--line);
+  }
+
+  .card-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  .card-photo .placeholder { width: 56%; height: 56%; opacity: 0.55; }
+
+  .card-body { padding: 12px 13px 13px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+
+  .card-name {
+    font-family: var(--serif);
+    font-size: 16.5px;
+    font-weight: 700;
+    line-height: 1.25;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-self: flex-start;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 9px;
+    border-radius: 20px;
+    letter-spacing: 0.01em;
+  }
+
+  .card-footer {
+    margin-top: auto;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    border-top: 1px dashed var(--line);
+    padding-top: 8px;
+  }
+
+  .qty-num { font-family: var(--serif); font-size: 22px; font-weight: 700; }
+  .qty-label { font-size: 11px; color: var(--ink-soft); }
+
+  .low-flag {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--stamp);
+    background: var(--stamp-tint);
+    padding: 2px 7px;
+    border-radius: 20px;
+  }
+
+  .popular-flag {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: var(--amber);
+    background: var(--amber-tint);
+    padding: 2px 7px;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+  }
+  .popular-flag svg { width: 10px; height: 10px; fill: var(--amber); }
+
+  .card-badges { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  .empty-state {
+    text-align: center;
+    padding: 70px 20px;
+    color: var(--ink-soft);
+  }
+
+  .empty-state h3 { font-family: var(--serif); font-size: 20px; color: var(--ink); margin-bottom: 6px; }
+
+  /* ---------- Donate view ---------- */
+
+  .donate-hero {
+    background: var(--crate);
+    color: var(--paper-light);
+    border-radius: var(--radius);
+    padding: 28px;
+    margin-bottom: 22px;
+  }
+
+  .donate-hero h2 {
+    font-family: var(--serif);
+    font-size: 26px;
+    margin: 0 0 8px;
+  }
+
+  .donate-hero p {
+    font-size: 14.5px;
+    max-width: 62ch;
+    line-height: 1.5;
+    margin: 0 0 20px;
+    color: #e7ede9;
+  }
+
+  .donate-contact-row { display: flex; gap: 12px; flex-wrap: wrap; }
+
+  .contact-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255,255,255,0.1);
+    border: 1.5px solid rgba(255,255,255,0.35);
+    border-radius: var(--radius);
+    padding: 10px 16px;
+    text-decoration: none;
+    color: var(--paper-light);
+    transition: background 0.15s ease;
+  }
+
+  .contact-card:hover { background: rgba(255,255,255,0.2); }
+  .contact-card svg { width: 20px; height: 20px; flex-shrink: 0; }
+  .contact-label { font-size: 11px; opacity: 0.85; }
+  .contact-value { font-size: 14px; font-weight: 600; }
+
+  .pledge-table td { font-size: 13.5px; }
+  .pledge-meta { font-size: 12px; color: var(--ink-soft); }
+
+  /* ---------- Buttons ---------- */
+
+  button {
+    font-family: var(--sans);
+    cursor: pointer;
+  }
+
+  .btn {
+    font-size: 13.5px;
+    font-weight: 600;
+    padding: 9px 15px;
+    border-radius: var(--radius);
+    border: 1.5px solid var(--ink);
+    background: var(--paper-light);
+    color: var(--ink);
+  }
+
+  .btn:hover { background: var(--ink); color: var(--paper-light); }
+
+  .btn-primary { background: var(--crate); border-color: var(--crate); color: #fff; }
+  .btn-primary:hover { background: var(--crate-dark); border-color: var(--crate-dark); }
+
+  .btn-danger { background: var(--paper-light); border-color: var(--stamp); color: var(--stamp); }
+  .btn-danger:hover { background: var(--stamp); color: #fff; }
+
+  .btn-sm { padding: 5px 9px; font-size: 12px; }
+
+  /* ---------- Modal ---------- */
+
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(32,38,31,0.55);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 50; padding: 20px;
+  }
+
+  .modal {
+    background: var(--paper-light);
+    border-radius: var(--radius);
+    border: 1.5px solid var(--ink);
+    width: 100%; max-width: 360px;
+    padding: 26px;
+  }
+
+  .modal h3 { font-family: var(--serif); font-size: 20px; margin: 0 0 4px; }
+  .modal p.hint { font-size: 13px; color: var(--ink-soft); margin: 0 0 16px; }
+  .modal .row { display: flex; gap: 10px; margin-top: 18px; }
+  .modal .row button { flex: 1; }
+  .error-text { color: var(--stamp); font-size: 12.5px; margin-top: 8px; min-height: 16px; }
+
+  /* ---------- Staff view ---------- */
+
+  .staff-header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 20px; flex-wrap: wrap; gap: 10px;
+  }
+
+  .staff-header h2 { font-family: var(--serif); font-size: 24px; margin: 0; }
+  .staff-header p { font-size: 13px; color: var(--ink-soft); margin: 3px 0 0; }
+
+  .panel {
+    background: var(--paper-light);
+    border: 1.5px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 22px;
+  }
+
+  .panel h3 {
+    font-family: var(--serif);
+    font-size: 17px;
+    margin: 0 0 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed var(--line);
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: 2fr 1.3fr 1fr;
+    gap: 12px;
+    align-items: end;
+  }
+
+  .form-grid .full { grid-column: 1 / -1; }
+
+  .new-cat-row { display: flex; gap: 8px; margin-top: 6px; }
+  .new-cat-row input { flex: 1; }
+
+  .cat-chip-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+
+  .file-drop {
+    border: 1.5px dashed var(--line);
+    border-radius: var(--radius);
+    padding: 8px 10px;
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    background: #fff;
+    cursor: pointer;
+    text-align: center;
+  }
+  .file-drop:hover { border-color: var(--crate); color: var(--crate); }
+
+  .stock-table { width: 100%; border-collapse: collapse; }
+  .stock-table th {
+    text-align: left; font-size: 11px; letter-spacing: 0.02em;
+    color: var(--ink-soft); font-weight: 600;
+    padding: 0 10px 8px; border-bottom: 1.5px solid var(--line);
+  }
+  .stock-table td { padding: 10px; border-bottom: 1px solid var(--line-soft); vertical-align: middle; }
+  .stock-table tr:last-child td { border-bottom: none; }
+
+  .thumb {
+    width: 42px; height: 42px; border-radius: var(--radius);
+    background: var(--crate-tint); overflow: hidden;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .thumb svg { width: 22px; height: 22px; opacity: 0.5; }
+
+  .item-name-cell { display: flex; align-items: center; gap: 10px; }
+  .item-name-cell .name { font-weight: 600; }
+
+  .qty-editor { display: flex; align-items: center; gap: 6px; }
+  .qty-editor input { width: 58px; text-align: center; padding: 6px; }
+  .qty-editor button {
+    width: 26px; height: 26px; border-radius: var(--radius);
+    border: 1.5px solid var(--line); background: #fff; font-size: 15px;
+    display: flex; align-items: center; justify-content: center; padding: 0;
+  }
+  .qty-editor button:hover { background: var(--crate-tint); border-color: var(--crate); }
+
+  .row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  .replace-label {
+    font-size: 11.5px; font-weight: 600; color: var(--crate);
+    border: 1.5px solid var(--crate); border-radius: var(--radius);
+    padding: 5px 8px; cursor: pointer; display: inline-block;
+  }
+  .replace-label:hover { background: var(--crate); color: #fff; }
+  .replace-label input { display: none; }
+
+  .toast {
+    position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%);
+    background: var(--ink); color: var(--paper-light);
+    padding: 10px 18px; border-radius: var(--radius);
+    font-size: 13.5px; z-index: 100;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+
+  .loading-note { text-align: center; padding: 60px; color: var(--ink-soft); font-size: 14px; }
+
+  /* ---------- Footer ---------- */
+
+  .site-footer {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 18px 28px 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    border-top: 1px solid var(--line);
+  }
+
+  .site-footer p {
+    font-size: 12px;
+    color: var(--ink-soft);
+    margin: 0;
+    line-height: 1.6;
+    max-width: 70ch;
+  }
+
+  .site-footer a { color: var(--crate); text-decoration: underline; }
+
+  .staff-link {
+    background: none;
+    border: none;
+    font-family: var(--sans);
+    font-size: 11.5px;
+    color: var(--line);
+    cursor: pointer;
+    padding: 4px 6px;
+    opacity: 0.7;
+    flex-shrink: 0;
+  }
+  .staff-link:hover { color: var(--ink-soft); opacity: 1; }
+
+  /* ---------- Item detail modal ---------- */
+
+  .detail-modal {
+    max-width: 480px;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .detail-modal-photo {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    background: var(--crate-tint);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  .detail-modal-photo img { width: 100%; height: 100%; object-fit: cover; }
+  .detail-modal-photo .placeholder { width: 40%; height: 40%; opacity: 0.5; }
+
+  .detail-modal-body { padding: 22px; }
+
+  .detail-modal-body .card-name { font-size: 22px; margin-bottom: 8px; }
+
+  .detail-modal-footer {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin: 14px 0; border-top: 1px dashed var(--line); border-bottom: 1px dashed var(--line);
+    padding: 10px 0;
+  }
+
+  .detail-description {
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    white-space: pre-wrap;
+  }
+
+  .detail-close {
+    position: absolute; top: 12px; right: 12px;
+    width: 30px; height: 30px; border-radius: 50%;
+    background: rgba(32,38,31,0.55); border: none; color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 16px; line-height: 1;
+  }
+  .detail-close:hover { background: rgba(32,38,31,0.8); }
+
+  .detail-thumbs {
+    display: flex;
+    gap: 8px;
+    padding: 0 22px;
+    margin-top: -8px;
+  }
+  .detail-thumb-btn {
+    width: 44px; height: 44px; border-radius: var(--radius);
+    padding: 0; overflow: hidden; cursor: pointer;
+    border: 2px solid transparent; opacity: 0.6;
+    background: var(--crate-tint);
+  }
+  .detail-thumb-btn.active { border-color: var(--crate); opacity: 1; }
+  .detail-thumb-btn img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  .photo-slot {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--crate-tint);
+  }
+  .photo-slot img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .photo-slot-remove {
+    position: absolute; top: 3px; right: 3px;
+    width: 20px; height: 20px; border-radius: 50%;
+    background: rgba(32,38,31,0.7); border: none; color: #fff;
+    font-size: 11px; line-height: 1; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .photo-slot-remove:hover { background: var(--stamp); }
+
+  @media (max-width: 640px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .masthead-inner { flex-direction: column; align-items: flex-start; }
+    .stock-table { display: block; overflow-x: auto; white-space: nowrap; }
+  }
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="brand">
+      <svg class="crate-mark" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="4" y="14" width="40" height="28" stroke="#20261f" stroke-width="2.5" fill="#e7e2d2"/>
+        <path d="M4 14L24 4L44 14" stroke="#20261f" stroke-width="2.5" stroke-linejoin="round" fill="none"/>
+        <path d="M24 4V42" stroke="#20261f" stroke-width="2" stroke-dasharray="3 3"/>
+        <path d="M4 14L24 24L44 14" stroke="#20261f" stroke-width="2"/>
+      </svg>
+      <div class="brand-text">
+        <p class="eyebrow">POWIIS</p>
+        <h1 id="brandTagline">Operation Donation Inventory</h1>
+      </div>
+    </div>
+    <nav class="tabs">
+      <button class="tab-btn active" id="tabBrowse" onclick="setView('browse')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="18" height="13" rx="1"/><path d="M8 7V5a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+        <span id="navBrowseText">Browse Inventory</span>
+      </button>
+      <button class="tab-btn" id="tabDonate" onclick="setView('donate')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-9A5.5 5.5 0 0112 5.5 5.5 5.5 0 0121.5 12c-2.5 4.65-9.5 9-9.5 9z"/></svg>
+        <span id="navDonateText">Donate</span>
+      </button>
+      <select id="langSelect" onchange="setLanguage(this.value)" style="min-width:auto;font-size:13px;padding:9px 10px;">
+        <option value="en">EN</option>
+        <option value="zh">中文</option>
+        <option value="ms">BM</option>
+        <option value="ja">日本語</option>
+        <option value="ko">한국어</option>
+      </select>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+  <!-- BROWSE VIEW -->
+  <section id="browseView">
+
+    <div class="tracker-strip" id="trackerStrip">
+      <div class="tracker-stat">
+        <div class="tracker-num" id="trackerStock">0</div>
+        <div class="tracker-label" id="trackerStockLabel">Items in stock</div>
+      </div>
+      <div class="tracker-stat">
+        <div class="tracker-num" id="trackerTypes">0</div>
+        <div class="tracker-label" id="trackerTypesLabel">Item types</div>
+      </div>
+      <div class="tracker-stat">
+        <div class="tracker-num" id="trackerPledges">0</div>
+        <div class="tracker-label" id="trackerDonationsLabel">Donations received</div>
+      </div>
+      <div class="tracker-stat">
+        <div class="tracker-num" id="trackerPledgedQty">0</div>
+        <div class="tracker-label" id="trackerPledgedLabel">Items pledged by donors</div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="field-group search-wrap" style="margin-top:16px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="search" id="searchInput" placeholder="Search items…" oninput="renderGrid()">
+      </div>
+      <div class="field-group">
+        <label for="categoryFilter" id="categoryFilterLabel">Category</label>
+        <select id="categoryFilter" onchange="renderGrid()"></select>
+      </div>
+      <div class="field-group">
+        <label for="genderFilter" id="genderFilterLabel">Gender</label>
+        <select id="genderFilter" onchange="renderGrid()">
+          <option value="all" id="genderOptAll">All genders</option>
+          <option value="boy" id="genderOptBoy">Boy</option>
+          <option value="girl" id="genderOptGirl">Girl</option>
+          <option value="both" id="genderOptBoth">Both</option>
+        </select>
+      </div>
+      <div class="field-group">
+        <label for="sortSelect" id="sortSelectLabel">Sort by</label>
+        <select id="sortSelect" onchange="renderGrid()">
+          <option value="popular" id="sortOptPopular">Popular</option>
+          <option value="stock" id="sortOptStock">Most stock</option>
+          <option value="name" id="sortOptName">Name (A–Z)</option>
+        </select>
+      </div>
+      <div class="count-pill" id="countPill"></div>
+    </div>
+
+    <div id="gridWrap">
+      <div class="loading-note">Loading inventory…</div>
+    </div>
+  </section>
+
+  <!-- DONATE VIEW -->
+  <section id="donateView" style="display:none;">
+    <div class="donate-hero">
+      <h2 id="donateHeroTitle">Donate to families and people in need in Penang</h2>
+      <p id="donateHeroText">Every item you give goes straight to someone who needs it. Reach out directly, or tell us what you'd like to donate below and we'll be in touch to arrange drop-off or pickup.</p>
+      <div class="donate-contact-row">
+        <a class="contact-card" id="donateEmailLink" href="#">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+          <div>
+            <div class="contact-label" id="donateEmailLabel">Email us</div>
+            <div class="contact-value" id="donateEmailText"></div>
+          </div>
+        </a>
+        <a class="contact-card" id="donatePhoneLink" href="#">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.9v3a2 2 0 01-2.2 2 19.8 19.8 0 01-8.6-3 19.5 19.5 0 01-6-6 19.8 19.8 0 01-3-8.7A2 2 0 014.1 2h3a2 2 0 012 1.7c.1 1 .3 2 .7 3a2 2 0 01-.4 2.1L8 10.3a16 16 0 006 6l1.5-1.5a2 2 0 012.1-.4c1 .3 2 .5 3 .7a2 2 0 011.7 2z"/></svg>
+          <div>
+            <div class="contact-label" id="donatePhoneLabel">Call or message</div>
+            <div class="contact-value" id="donatePhoneText"></div>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <div class="panel" id="pledgeFormPanel">
+      <h3 id="pledgeFormHeading">Tell us what you'd like to donate</h3>
+      <div class="form-grid">
+        <div class="field-group" style="margin:0;">
+          <label id="pledgeNameLabel">Your name</label>
+          <input type="text" id="pledgeName" placeholder="e.g. Aisyah Rahman">
+        </div>
+        <div class="field-group" style="margin:0;">
+          <label id="pledgeContactLabel">Your email or phone</label>
+          <input type="text" id="pledgeContact" placeholder="So we can reach you">
+        </div>
+        <div class="field-group" style="margin:0;">
+          <label id="pledgeCategoryLabel">Category</label>
+          <select id="pledgeCategory"></select>
+        </div>
+        <div class="field-group full" style="margin:0;">
+          <label id="pledgeItemLabel">What would you like to donate?</label>
+          <input type="text" id="pledgeItem" placeholder="e.g. Children's winter jackets">
+        </div>
+        <div class="field-group" style="margin:0;">
+          <label id="pledgeQtyLabel">Quantity</label>
+          <input type="number" id="pledgeQty" min="1" max="10000" value="1">
+        </div>
+        <div class="field-group" style="margin:0;">
+          <label id="pledgePhotoFieldLabel">Photo (optional)</label>
+          <div class="file-drop" onclick="document.getElementById('pledgePhoto').click()" id="pledgePhotoLabel">Choose a photo…</div>
+          <input type="file" id="pledgePhoto" accept="image/*" style="display:none" onchange="handlePledgePhotoPreview()">
+        </div>
+        <div class="field-group full" style="margin:0;">
+          <label id="pledgeNotesLabel">Anything else we should know? (optional)</label>
+          <input type="text" id="pledgeNotes" placeholder="Condition, size, pickup availability…">
+        </div>
+        <div class="field-group full" style="margin:0;">
+          <button class="btn btn-primary" id="pledgeSubmitBtn" onclick="submitPledge()">Send donation pledge</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="pledgeThanksPanel" style="display:none; text-align:center;">
+      <h3 style="border-bottom:none;" id="pledgeThanksTitle">Thank you — we've received your pledge</h3>
+      <p style="color:var(--ink-soft); margin:0 0 16px;" id="pledgeThanksText">A member of our team will reach out shortly to arrange the details.</p>
+      <button class="btn" id="pledgeSubmitAnotherBtn" onclick="resetPledgeForm()">Submit another pledge</button>
+    </div>
+  </section>
+
+  <!-- STAFF VIEW -->
+  <section id="staffView" style="display:none;">
+
+    <div id="staffLocked" class="empty-state">
+      <h3>Staff access required</h3>
+      <p>This area is for authorized staff only.</p>
+    </div>
+
+    <div id="staffUnlocked" style="display:none;">
+      <div class="staff-header">
+        <div>
+          <h2>Staff Panel</h2>
+          <p>Add items, update quantities, upload photos and manage categories.</p>
+        </div>
+        <button class="btn" onclick="exitStaffMode()">Exit staff mode</button>
+      </div>
+
+      <div class="panel">
+        <h3>Add a new item</h3>
+        <div class="form-grid">
+          <div class="field-group full" style="margin:0;">
+            <label>Item name</label>
+            <input type="text" id="newItemName" placeholder="e.g. Notebooks (A5, ruled)">
+          </div>
+          <div class="field-group" style="margin:0;">
+            <label>Category</label>
+            <select id="newItemCategory"></select>
+          </div>
+          <div class="field-group" style="margin:0;">
+            <label>Quantity</label>
+            <input type="number" id="newItemQty" min="0" max="1000000" value="0">
+          </div>
+          <div class="field-group" style="margin:0;">
+            <label id="newItemGenderLabel">Gender</label>
+            <select id="newItemGender">
+              <option value="both" id="newItemGenderBoth" selected>Both</option>
+              <option value="boy" id="newItemGenderBoy">Boy</option>
+              <option value="girl" id="newItemGenderGirl">Girl</option>
+            </select>
+          </div>
+          <div class="field-group" style="margin:0;">
+            <label>Photos (optional, up to 4)</label>
+            <div class="file-drop" onclick="document.getElementById('newItemPhoto').click()" id="newItemPhotoLabel">Choose photo(s)…</div>
+            <input type="file" id="newItemPhoto" accept="image/*" multiple style="display:none" onchange="handleNewPhotosPreview(this)">
+            <div id="newItemPhotoPreview" style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap;"></div>
+          </div>
+          <div class="field-group full" style="margin:0;">
+            <label>Description (optional)</label>
+            <input type="text" id="newItemDescription" placeholder="Shown when someone clicks the item to see more">
+          </div>
+          <div class="field-group full" style="margin:0;">
+            <button class="btn btn-primary" onclick="addItem()">Add item to inventory</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Categories</h3>
+        <div class="cat-chip-row" id="categoryChipList"></div>
+        <div class="new-cat-row">
+          <input type="text" id="newCategoryInput" placeholder="Add a new category…">
+          <button class="btn" onclick="addCategory()">Add category</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Donation info shown on the Donate page</h3>
+        <div class="form-grid">
+          <div class="field-group" style="margin:0;">
+            <label>Contact email</label>
+            <input type="text" id="donateInfoEmail" placeholder="e.g. donations@powiis.edu.my">
+          </div>
+          <div class="field-group" style="margin:0;">
+            <label>Contact phone</label>
+            <input type="text" id="donateInfoPhone" placeholder="e.g. +60 12-345 6789">
+          </div>
+          <div class="field-group" style="margin:0;">
+            <button class="btn btn-primary" onclick="saveDonateInfo()">Save contact info</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Donations received</h3>
+        <p style="font-size:13px;color:var(--ink-soft);margin:0 0 12px;">This number is set by hand — it doesn't change automatically when someone submits a pledge. Update it whenever a donation actually comes in.</p>
+        <div class="form-grid">
+          <div class="field-group" style="margin:0;">
+            <label>Total donations received</label>
+            <input type="number" id="donationsReceivedInput" min="0" max="1000000" value="0">
+          </div>
+          <div class="field-group" style="margin:0;">
+            <button class="btn btn-primary" onclick="saveDonationsReceived()">Update</button>
+          </div>
+          <div class="field-group" style="margin:0;">
+            <label>Items pledged by donors (total)</label>
+            <input type="number" id="pledgedQtyInput" min="0" max="1000000" value="0">
+          </div>
+          <div class="field-group" style="margin:0;">
+            <button class="btn btn-primary" onclick="savePledgedQty()">Update</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Current stock</h3>
+        <div style="overflow-x:auto;">
+          <table class="stock-table">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Category</th>
+                <th>Gender</th>
+                <th>Quantity</th>
+                <th>Photos</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="stockTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Donation pledges from the public</h3>
+        <p style="font-size:13px;color:var(--ink-soft);margin:0 0 12px;">These come from the Donate form. Removing one here only clears it from this list — the totals on the front page keep counting every pledge ever received.</p>
+        <div style="overflow-x:auto;">
+          <table class="stock-table pledge-table">
+            <thead>
+              <tr>
+                <th>Donor</th>
+                <th>Item</th>
+                <th>Qty</th>
+                <th>Category</th>
+                <th>Photo</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="pledgeTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="panel" style="border-color:var(--stamp);">
+        <h3 style="color:var(--stamp);border-bottom-color:var(--stamp-tint);">Danger zone</h3>
+        <p style="font-size:13px;color:var(--ink-soft);margin:0 0 12px;">Permanently erase every item, category and photo, and start fresh. This requires a separate confirmation password so it can't happen by accident.</p>
+        <button class="btn btn-danger" onclick="openResetModal()">Reset all inventory data</button>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <p>
+    <span id="footerCreditPrefix">This website is maintained by the Operation Donation team at</span>
+    <a href="https://www.powiis.edu.my/balik-pulau/" target="_blank" rel="noopener">POWIIS Balik Pulau</a>.
+  </p>
+  <button class="staff-link" id="staffLinkBtn" onclick="setView('staff')">Staff</button>
+</footer>
+
+<div id="passwordModalBackdrop" class="modal-backdrop" style="display:none;">
+  <div class="modal">
+    <h3 id="staffModalTitle">Staff access</h3>
+    <p class="hint" id="staffModalHint">Enter the staff password to manage inventory.</p>
+    <input type="password" id="passwordInput" placeholder="Password" style="width:100%;" onkeydown="if(event.key==='Enter')checkPassword()">
+    <p class="error-text" id="passwordError"></p>
+    <div class="row">
+      <button class="btn" id="staffModalCancelBtn" onclick="closePasswordModal()">Cancel</button>
+      <button class="btn btn-primary" id="staffModalEnterBtn" onclick="checkPassword()">Enter</button>
+    </div>
+  </div>
+</div>
+
+<div id="confirmModalBackdrop" class="modal-backdrop" style="display:none;">
+  <div class="modal">
+    <h3>Are you sure?</h3>
+    <p class="hint" id="confirmModalMessage"></p>
+    <div class="row">
+      <button class="btn" onclick="closeConfirmModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmModalAccept()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div id="itemDetailBackdrop" class="modal-backdrop" style="display:none;" onclick="if(event.target===this)closeItemDetail()">
+  <div class="modal detail-modal" style="position:relative;">
+    <button class="detail-close" onclick="closeItemDetail()">✕</button>
+    <div class="detail-modal-photo" id="detailModalPhoto"></div>
+    <div class="detail-modal-body">
+      <div class="card-name" id="detailModalName"></div>
+      <span class="chip" id="detailModalChip"></span>
+      <button class="btn btn-sm" id="detailOriginalToggle" onclick="toggleDetailOriginal()" style="display:none;margin-left:8px;"></button>
+      <div class="detail-thumbs" id="detailModalThumbs" style="display:none;"></div>
+      <div class="detail-modal-footer">
+        <div>
+          <div class="qty-num" id="detailModalQty"></div>
+          <div class="qty-label" id="detailModalQtyLabel">in stock</div>
+        </div>
+        <div class="card-badges" id="detailModalBadges"></div>
+      </div>
+      <p class="detail-description" id="detailModalDescription"></p>
+    </div>
+  </div>
+</div>
+
+<div id="editDescriptionBackdrop" class="modal-backdrop" style="display:none;">
+  <div class="modal" style="max-width:420px;">
+    <h3>Edit description</h3>
+    <p class="hint" id="editDescriptionItemName"></p>
+    <textarea id="editDescriptionInput" rows="5" style="width:100%;font-family:var(--sans);font-size:14px;padding:9px 10px;border:1.5px solid var(--line);border-radius:var(--radius);resize:vertical;" placeholder="Shown when someone clicks this item on the Browse page…"></textarea>
+    <div class="row">
+      <button class="btn" onclick="closeEditDescription()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEditDescription()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="managePhotosBackdrop" class="modal-backdrop" style="display:none;">
+  <div class="modal" style="max-width:460px;">
+    <h3>Manage photos</h3>
+    <p class="hint" id="managePhotosItemName"></p>
+    <div id="managePhotosGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0;"></div>
+    <input type="file" id="managePhotosFileInput" accept="image/*" multiple style="display:none" onchange="handleManagePhotosUpload(this)">
+    <button class="btn" id="managePhotosAddBtn" onclick="document.getElementById('managePhotosFileInput').click()">Add photo(s)</button>
+    <div class="row">
+      <button class="btn btn-primary" onclick="closeManagePhotos()">Done</button>
+    </div>
+  </div>
+</div>
+
+<div id="resetModalBackdrop" class="modal-backdrop" style="display:none;">
+  <div class="modal">
+    <h3>Confirm full reset</h3>
+    <p class="hint">This permanently erases every item, category and photo, and reloads the page. Type <strong>truereset</strong> below to confirm.</p>
+    <input type="text" id="resetPasswordInput" placeholder="Confirmation password" style="width:100%;" onkeydown="if(event.key==='Enter')confirmReset()">
+    <p class="error-text" id="resetPasswordError"></p>
+    <div class="row">
+      <button class="btn" onclick="closeResetModal()">Cancel</button>
+      <button class="btn btn-danger" onclick="confirmReset()">Erase everything</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------------------------------------------------------
+   POWIIS Operation Donation Inventory
+   Data is stored with window.storage (shared = true), so
+   everyone who opens this artifact sees the same inventory.
+   --------------------------------------------------------- */
+
+const STAFF_PASSWORD = "operationdonation";
+const RESET_PASSWORD = "truereset";
+
+const ITEMS_KEY = "powiis:items";
+const CATS_KEY = "powiis:categories";
+const PLEDGES_KEY = "powiis:pledges";
+const STATS_KEY = "powiis:donationStats";
+const DONATE_INFO_KEY = "powiis:donateInfo";
+
+const DEFAULT_CATEGORIES = ["Stationery", "Clothes", "Footwear", "Household", "Toiletries", "Misc"];
+
+const CHIP_PALETTE = [
+  { bg: "#e2e8e0", fg: "#3e5c4c" }, // sage/crate
+  { bg: "#e2e9ec", fg: "#3e5f6e" }, // dusty blue
+  { bg: "#f0e0d6", fg: "#8a4a30" }, // clay
+  { bg: "#f2e6cc", fg: "#8a641f" }, // mustard
+  { bg: "#ebe0e8", fg: "#6e4a63" }, // plum
+  { bg: "#e6e6e2", fg: "#54585a" }, // slate
+];
+
+/* ---------------- language (client-side only, resets on reload) ---------------- */
+
+let currentLang = "en";
+
+const TRANSLATIONS = {
+  en: {
+    nav_browse: "Browse Inventory", nav_donate: "Donate",
+    brand_tagline: "Operation Donation Inventory",
+    tracker_stock: "Items in stock", tracker_types: "Item types",
+    tracker_donations: "Donations received", tracker_pledged: "Items pledged by donors",
+    search_placeholder: "Search items…",
+    label_category: "Category", option_all_categories: "All categories",
+    label_sort: "Sort by", sort_popular: "Popular", sort_stock: "Most stock", sort_name: "Name (A–Z)",
+    count_items: (v) => `${v.n} item${v.n === 1 ? "" : "s"}`,
+    card_in_stock: "in stock", badge_popular: "Popular", badge_low_stock: "Low stock",
+    empty_title: "No items found", empty_subtitle: "Try a different search term or category.",
+    detail_no_description: "No description added yet.",
+    donate_hero_title: "Donate to families and people in need in Penang",
+    donate_hero_text: "Every item you give goes straight to someone who needs it. Reach out directly, or tell us what you'd like to donate below and we'll be in touch to arrange drop-off or pickup.",
+    donate_email_label: "Email us", donate_phone_label: "Call or message", donate_coming_soon: "Coming soon",
+    donate_form_heading: "Tell us what you'd like to donate",
+    label_your_name: "Your name", placeholder_your_name: "e.g. Aisyah Rahman",
+    label_your_contact: "Your email or phone", placeholder_your_contact: "So we can reach you",
+    label_what_donate: "What would you like to donate?", placeholder_what_donate: "e.g. Children's winter jackets",
+    label_quantity: "Quantity", label_photo_optional: "Photo (optional)", choose_photo: "Choose a photo…",
+    label_notes_optional: "Anything else we should know? (optional)", placeholder_notes: "Condition, size, pickup availability…",
+    btn_send_pledge: "Send donation pledge",
+    thanks_title: "Thank you — we've received your pledge",
+    thanks_text: "A member of our team will reach out shortly to arrange the details.",
+    btn_submit_another: "Submit another pledge", option_not_sure: "Not sure / Other",
+    footer_credit_prefix: "This website is maintained by the Operation Donation team at",
+    staff_link: "Staff", staff_modal_title: "Staff access",
+    staff_modal_hint: "Enter the staff password to manage inventory.",
+    password_placeholder: "Password", btn_cancel: "Cancel", btn_enter: "Enter",
+    incorrect_password: "Incorrect password. Try again.",
+  },
+  zh: {
+    nav_browse: "浏览库存", nav_donate: "捐赠",
+    brand_tagline: "捐赠行动库存",
+    tracker_stock: "库存物品", tracker_types: "物品种类",
+    tracker_donations: "已收到捐赠", tracker_pledged: "捐赠者承诺数量",
+    search_placeholder: "搜索物品…",
+    label_category: "类别", option_all_categories: "所有类别",
+    label_sort: "排序方式", sort_popular: "热门", sort_stock: "库存最多", sort_name: "名称（A–Z）",
+    count_items: (v) => `${v.n} 件物品`,
+    card_in_stock: "库存", badge_popular: "热门", badge_low_stock: "库存不足",
+    empty_title: "未找到物品", empty_subtitle: "请尝试其他搜索词或类别。",
+    detail_no_description: "尚未添加描述。",
+    donate_hero_title: "为槟城有需要的家庭和人士捐赠",
+    donate_hero_text: "您捐赠的每一件物品都会直接送到需要帮助的人手中。请直接联系我们，或在下方填写您想捐赠的物品，我们会与您联系安排取件或送达事宜。",
+    donate_email_label: "给我们发邮件", donate_phone_label: "致电或留言", donate_coming_soon: "即将推出",
+    donate_form_heading: "告诉我们您想捐赠什么",
+    label_your_name: "您的姓名", placeholder_your_name: "例如：Aisyah Rahman",
+    label_your_contact: "您的电子邮件或电话", placeholder_your_contact: "以便我们联系您",
+    label_what_donate: "您想捐赠什么？", placeholder_what_donate: "例如：儿童冬季外套",
+    label_quantity: "数量", label_photo_optional: "照片（可选）", choose_photo: "选择照片…",
+    label_notes_optional: "还有其他需要告诉我们的吗？（可选）", placeholder_notes: "物品状况、尺寸、取件时间等…",
+    btn_send_pledge: "提交捐赠意向",
+    thanks_title: "谢谢您 — 我们已收到您的捐赠意向",
+    thanks_text: "我们的工作人员会尽快与您联系，安排相关细节。",
+    btn_submit_another: "再提交一项捐赠", option_not_sure: "不确定 / 其他",
+    footer_credit_prefix: "本网站由 Operation Donation 团队维护，隶属于",
+    staff_link: "职员", staff_modal_title: "职员登录",
+    staff_modal_hint: "请输入职员密码以管理库存。",
+    password_placeholder: "密码", btn_cancel: "取消", btn_enter: "进入",
+    incorrect_password: "密码错误，请重试。",
+  },
+  ms: {
+    nav_browse: "Lihat Inventori", nav_donate: "Derma",
+    brand_tagline: "Inventori Operasi Derma",
+    tracker_stock: "Barang dalam stok", tracker_types: "Jenis barang",
+    tracker_donations: "Derma diterima", tracker_pledged: "Barang dijanjikan penderma",
+    search_placeholder: "Cari barang…",
+    label_category: "Kategori", option_all_categories: "Semua kategori",
+    label_sort: "Susun mengikut", sort_popular: "Popular", sort_stock: "Stok terbanyak", sort_name: "Nama (A–Z)",
+    count_items: (v) => `${v.n} barang`,
+    card_in_stock: "dalam stok", badge_popular: "Popular", badge_low_stock: "Stok rendah",
+    empty_title: "Tiada barang dijumpai", empty_subtitle: "Cuba kata carian atau kategori lain.",
+    detail_no_description: "Belum ada penerangan ditambah.",
+    donate_hero_title: "Derma kepada keluarga dan mereka yang memerlukan di Pulau Pinang",
+    donate_hero_text: "Setiap barang yang anda derma akan terus disalurkan kepada mereka yang memerlukan. Hubungi kami terus, atau beritahu kami apa yang anda ingin derma di bawah dan kami akan menghubungi anda untuk mengatur penghantaran atau pengambilan.",
+    donate_email_label: "E-mel kami", donate_phone_label: "Hubungi atau mesej", donate_coming_soon: "Akan datang",
+    donate_form_heading: "Beritahu kami apa yang anda ingin derma",
+    label_your_name: "Nama anda", placeholder_your_name: "cth. Aisyah Rahman",
+    label_your_contact: "E-mel atau telefon anda", placeholder_your_contact: "Supaya kami boleh hubungi anda",
+    label_what_donate: "Apa yang anda ingin derma?", placeholder_what_donate: "cth. Jaket musim sejuk kanak-kanak",
+    label_quantity: "Kuantiti", label_photo_optional: "Gambar (pilihan)", choose_photo: "Pilih gambar…",
+    label_notes_optional: "Ada apa-apa lagi yang perlu kami tahu? (pilihan)", placeholder_notes: "Keadaan, saiz, waktu pengambilan…",
+    btn_send_pledge: "Hantar janji derma",
+    thanks_title: "Terima kasih — janji derma anda telah diterima",
+    thanks_text: "Ahli pasukan kami akan menghubungi anda tidak lama lagi untuk mengatur butiran.",
+    btn_submit_another: "Hantar satu lagi janji derma", option_not_sure: "Tidak pasti / Lain-lain",
+    footer_credit_prefix: "Laman web ini diselenggara oleh pasukan Operation Donation di",
+    staff_link: "Staf", staff_modal_title: "Akses staf",
+    staff_modal_hint: "Masukkan kata laluan staf untuk mengurus inventori.",
+    password_placeholder: "Kata laluan", btn_cancel: "Batal", btn_enter: "Masuk",
+    incorrect_password: "Kata laluan salah. Cuba lagi.",
+  },
+  ja: {
+    nav_browse: "在庫を見る", nav_donate: "寄付",
+    brand_tagline: "寄付活動 在庫管理",
+    tracker_stock: "在庫アイテム数", tracker_types: "アイテムの種類",
+    tracker_donations: "受領した寄付", tracker_pledged: "寄付者からの申し込み数量",
+    search_placeholder: "アイテムを検索…",
+    label_category: "カテゴリー", option_all_categories: "すべてのカテゴリー",
+    label_sort: "並び替え", sort_popular: "人気", sort_stock: "在庫が多い順", sort_name: "名前（A–Z）",
+    count_items: (v) => `${v.n} 件`,
+    card_in_stock: "在庫", badge_popular: "人気", badge_low_stock: "在庫少",
+    empty_title: "アイテムが見つかりません", empty_subtitle: "別のキーワードやカテゴリーをお試しください。",
+    detail_no_description: "説明はまだ追加されていません。",
+    donate_hero_title: "ペナンで支援を必要とする家族や人々への寄付",
+    donate_hero_text: "ご寄付いただいた品物は、必要としている方に直接届けられます。直接ご連絡いただくか、以下のフォームに寄付したい内容をご記入ください。受け渡しの詳細についてご連絡いたします。",
+    donate_email_label: "メールで連絡", donate_phone_label: "電話・メッセージで連絡", donate_coming_soon: "近日公開",
+    donate_form_heading: "寄付したい内容をお知らせください",
+    label_your_name: "お名前", placeholder_your_name: "例：Aisyah Rahman",
+    label_your_contact: "メールアドレスまたは電話番号", placeholder_your_contact: "ご連絡先として",
+    label_what_donate: "何を寄付されますか？", placeholder_what_donate: "例：子供用の冬用ジャケット",
+    label_quantity: "数量", label_photo_optional: "写真（任意）", choose_photo: "写真を選択…",
+    label_notes_optional: "その他お伝えしたいこと（任意）", placeholder_notes: "状態、サイズ、受け渡し可能な時間など…",
+    btn_send_pledge: "寄付の申し込みを送信",
+    thanks_title: "ありがとうございます — お申し込みを受け付けました",
+    thanks_text: "担当者より詳細についてご連絡いたします。",
+    btn_submit_another: "もう一件申し込む", option_not_sure: "わからない・その他",
+    footer_credit_prefix: "このサイトはOperation Donationチームによって運営されています：",
+    staff_link: "スタッフ", staff_modal_title: "スタッフ用アクセス",
+    staff_modal_hint: "在庫を管理するにはスタッフ用パスワードを入力してください。",
+    password_placeholder: "パスワード", btn_cancel: "キャンセル", btn_enter: "入る",
+    incorrect_password: "パスワードが違います。もう一度お試しください。",
+  },
+  ko: {
+    nav_browse: "재고 보기", nav_donate: "기부하기",
+    brand_tagline: "기부 작전 재고 관리",
+    tracker_stock: "보유 재고", tracker_types: "품목 종류",
+    tracker_donations: "받은 기부", tracker_pledged: "기부자 서약 수량",
+    search_placeholder: "물품 검색…",
+    label_category: "카테고리", option_all_categories: "모든 카테고리",
+    label_sort: "정렬 기준", sort_popular: "인기순", sort_stock: "재고 많은 순", sort_name: "이름 (A–Z)",
+    count_items: (v) => `${v.n}개 품목`,
+    card_in_stock: "재고", badge_popular: "인기", badge_low_stock: "재고 부족",
+    empty_title: "물품을 찾을 수 없습니다", empty_subtitle: "다른 검색어나 카테고리를 시도해 보세요.",
+    detail_no_description: "아직 설명이 없습니다.",
+    donate_hero_title: "페낭의 도움이 필요한 가정과 사람들을 위한 기부",
+    donate_hero_text: "기부하신 물품은 필요한 분께 바로 전달됩니다. 직접 연락하시거나 아래 양식에 기부하고 싶은 내용을 작성해 주시면 저희가 연락드려 전달 방법을 조율하겠습니다.",
+    donate_email_label: "이메일 문의", donate_phone_label: "전화 또는 메시지", donate_coming_soon: "곧 제공 예정",
+    donate_form_heading: "기부하고 싶은 물품을 알려주세요",
+    label_your_name: "이름", placeholder_your_name: "예: Aisyah Rahman",
+    label_your_contact: "이메일 또는 전화번호", placeholder_your_contact: "연락드릴 수 있도록",
+    label_what_donate: "무엇을 기부하고 싶으신가요?", placeholder_what_donate: "예: 아동용 겨울 자켓",
+    label_quantity: "수량", label_photo_optional: "사진 (선택 사항)", choose_photo: "사진 선택…",
+    label_notes_optional: "추가로 알려주실 내용 (선택 사항)", placeholder_notes: "상태, 사이즈, 수거 가능 시간 등…",
+    btn_send_pledge: "기부 서약 보내기",
+    thanks_title: "감사합니다 — 기부 서약이 접수되었습니다",
+    thanks_text: "담당자가 곧 연락드려 세부 사항을 조율할 예정입니다.",
+    btn_submit_another: "다른 기부 서약 제출하기", option_not_sure: "잘 모름 / 기타",
+    footer_credit_prefix: "이 웹사이트는 Operation Donation 팀이 관리합니다:",
+    staff_link: "직원", staff_modal_title: "직원 접속",
+    staff_modal_hint: "재고를 관리하려면 직원 비밀번호를 입력하세요.",
+    password_placeholder: "비밀번호", btn_cancel: "취소", btn_enter: "입장",
+    incorrect_password: "비밀번호가 틀렸습니다. 다시 시도해 주세요.",
+  },
+};
+
+function t(key, vars) {
+  const dict = TRANSLATIONS[currentLang] || TRANSLATIONS.en;
+  const entry = (key in dict) ? dict[key] : TRANSLATIONS.en[key];
+  if (typeof entry === "function") return entry(vars || {});
+  let str = entry !== undefined ? entry : key;
+  if (vars) Object.keys(vars).forEach(k => { str = str.replace(new RegExp("\\{" + k + "\\}", "g"), vars[k]); });
+  return str;
+}
+
+function applyStaticTranslations() {
+  document.getElementById("navBrowseText").textContent = t("nav_browse");
+  document.getElementById("navDonateText").textContent = t("nav_donate");
+  document.getElementById("brandTagline").textContent = t("brand_tagline");
+  document.getElementById("trackerStockLabel").textContent = t("tracker_stock");
+  document.getElementById("trackerTypesLabel").textContent = t("tracker_types");
+  document.getElementById("trackerDonationsLabel").textContent = t("tracker_donations");
+  document.getElementById("trackerPledgedLabel").textContent = t("tracker_pledged");
+  document.getElementById("searchInput").placeholder = t("search_placeholder");
+  document.getElementById("categoryFilterLabel").textContent = t("label_category");
+  document.getElementById("sortSelectLabel").textContent = t("label_sort");
+  document.getElementById("sortOptPopular").textContent = t("sort_popular");
+  document.getElementById("sortOptStock").textContent = t("sort_stock");
+  document.getElementById("sortOptName").textContent = t("sort_name");
+  document.getElementById("detailModalQtyLabel").textContent = t("card_in_stock");
+  document.getElementById("donateHeroTitle").textContent = t("donate_hero_title");
+  document.getElementById("donateHeroText").textContent = t("donate_hero_text");
+  document.getElementById("donateEmailLabel").textContent = t("donate_email_label");
+  document.getElementById("donatePhoneLabel").textContent = t("donate_phone_label");
+  document.getElementById("pledgeFormHeading").textContent = t("donate_form_heading");
+  document.getElementById("pledgeNameLabel").textContent = t("label_your_name");
+  document.getElementById("pledgeName").placeholder = t("placeholder_your_name");
+  document.getElementById("pledgeContactLabel").textContent = t("label_your_contact");
+  document.getElementById("pledgeContact").placeholder = t("placeholder_your_contact");
+  document.getElementById("pledgeCategoryLabel").textContent = t("label_category");
+  document.getElementById("pledgeItemLabel").textContent = t("label_what_donate");
+  document.getElementById("pledgeItem").placeholder = t("placeholder_what_donate");
+  document.getElementById("pledgeQtyLabel").textContent = t("label_quantity");
+  document.getElementById("pledgePhotoFieldLabel").textContent = t("label_photo_optional");
+  if (!document.getElementById("pledgePhoto").files.length) {
+    document.getElementById("pledgePhotoLabel").textContent = t("choose_photo");
+  }
+  document.getElementById("pledgeNotesLabel").textContent = t("label_notes_optional");
+  document.getElementById("pledgeNotes").placeholder = t("placeholder_notes");
+  document.getElementById("pledgeSubmitBtn").textContent = t("btn_send_pledge");
+  document.getElementById("pledgeThanksTitle").textContent = t("thanks_title");
+  document.getElementById("pledgeThanksText").textContent = t("thanks_text");
+  document.getElementById("pledgeSubmitAnotherBtn").textContent = t("btn_submit_another");
+  document.getElementById("footerCreditPrefix").textContent = t("footer_credit_prefix");
+  document.getElementById("staffLinkBtn").textContent = t("staff_link");
+  document.getElementById("staffModalTitle").textContent = t("staff_modal_title");
+  document.getElementById("staffModalHint").textContent = t("staff_modal_hint");
+  document.getElementById("passwordInput").placeholder = t("password_placeholder");
+  document.getElementById("staffModalCancelBtn").textContent = t("btn_cancel");
+  document.getElementById("staffModalEnterBtn").textContent = t("btn_enter");
+}
+
+function setLanguage(lang) {
+  currentLang = TRANSLATIONS[lang] ? lang : "en";
+  applyStaticTranslations();
+  if (dataReady) {
+    renderGrid();
+    setupDonateContacts();
+    populatePledgeCategory();
+  }
+}
+
+let items = [];
+let categories = [];
+let pledges = [];
+let donationStats = { donationsReceived: 0, totalQuantityPledged: 0 };
+let donateInfo = { email: "", phone: "" };
+let isStaff = false;
+let newPledgePhotoDataUrl = null;
+let dataReady = false;
+
+function catColor(cat) {
+  let hash = 0;
+  for (let i = 0; i < cat.length; i++) hash = cat.charCodeAt(i) + ((hash << 5) - hash);
+  return CHIP_PALETTE[Math.abs(hash) % CHIP_PALETTE.length];
+}
+
+let confirmModalCallback = null;
+
+function showConfirm(message, onConfirm) {
+  document.getElementById("confirmModalMessage").textContent = message;
+  confirmModalCallback = onConfirm;
+  document.getElementById("confirmModalBackdrop").style.display = "flex";
+}
+
+function closeConfirmModal() {
+  document.getElementById("confirmModalBackdrop").style.display = "none";
+  confirmModalCallback = null;
+}
+
+function confirmModalAccept() {
+  const cb = confirmModalCallback;
+  document.getElementById("confirmModalBackdrop").style.display = "none";
+  confirmModalCallback = null;
+  if (cb) cb();
+}
+
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+function placeholderSVG() {
+  return `<svg class="placeholder" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect x="4" y="14" width="40" height="28" stroke="#3e5c4c" stroke-width="2" fill="none"/>
+    <path d="M4 14L24 4L44 14" stroke="#3e5c4c" stroke-width="2" stroke-linejoin="round" fill="none"/>
+    <path d="M4 14L24 24L44 14" stroke="#3e5c4c" stroke-width="1.6"/>
+  </svg>`;
+}
+
+/* ---------------- storage load / save ---------------- */
+
+async function loadData() {
+  try {
+    const itemsRes = await window.storage.get(ITEMS_KEY, true);
+    items = itemsRes ? JSON.parse(itemsRes.value) : null;
+  } catch (e) { items = null; }
+
+  try {
+    const catsRes = await window.storage.get(CATS_KEY, true);
+    categories = catsRes ? JSON.parse(catsRes.value) : null;
+  } catch (e) { categories = null; }
+
+  if (!categories) {
+    categories = DEFAULT_CATEGORIES.slice();
+    await saveCategories();
+  }
+
+  if (!items) {
+    items = [];
+    await saveItems();
+  }
+
+  try {
+    const pledgesRes = await window.storage.get(PLEDGES_KEY, true);
+    pledges = pledgesRes ? JSON.parse(pledgesRes.value) : null;
+  } catch (e) { pledges = null; }
+  if (!pledges) {
+    pledges = [];
+    await savePledges();
+  }
+
+  try {
+    const statsRes = await window.storage.get(STATS_KEY, true);
+    donationStats = statsRes ? JSON.parse(statsRes.value) : null;
+  } catch (e) { donationStats = null; }
+  if (!donationStats) {
+    donationStats = { donationsReceived: 0, totalQuantityPledged: 0 };
+    await saveStats();
+  } else {
+    if (typeof donationStats.donationsReceived !== "number") donationStats.donationsReceived = 0;
+    if (typeof donationStats.totalQuantityPledged !== "number") donationStats.totalQuantityPledged = 0;
+  }
+
+  try {
+    const infoRes = await window.storage.get(DONATE_INFO_KEY, true);
+    donateInfo = infoRes ? JSON.parse(infoRes.value) : null;
+  } catch (e) { donateInfo = null; }
+  if (!donateInfo) {
+    donateInfo = { email: "", phone: "" };
+    await saveDonateInfoData();
+  }
+
+  dataReady = true;
+}
+
+function cryptoId() {
+  return "id-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 8);
+}
+
+/* Resize + compress an uploaded photo before storing it, so large
+   phone-camera photos don't bloat memory and slow the page down
+   over time. Caps the longest side and re-encodes as JPEG. */
+function compressDataUrl(dataUrl, maxDim = 800, quality = 0.68) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onerror = () => resolve(dataUrl); // couldn't process — keep original rather than losing it
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > maxDim || height > maxDim) {
+        if (width >= height) { height = Math.round(height * (maxDim / width)); width = maxDim; }
+        else { width = Math.round(width * (maxDim / height)); height = maxDim; }
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL("image/jpeg", quality));
+    };
+    img.src = dataUrl;
+  });
+}
+
+function readAndCompressImage(file, maxDim = 800, quality = 0.68) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error("Could not read file"));
+    reader.onload = () => resolve(compressDataUrl(reader.result, maxDim, quality));
+    reader.readAsDataURL(file);
+  });
+}
+
+/* One-time cleanup: any image already stored above ~250KB (likely
+   uploaded before compression was added) gets shrunk down and
+   re-saved. Also migrates older single-"image" items to the
+   "images" array format used for up to 4 photos per item. */
+async function migrateOversizedImages() {
+  const SIZE_LIMIT = 250 * 1024;
+  let changed = false;
+  for (const it of items) {
+    if (!Array.isArray(it.images)) {
+      it.images = it.image ? [it.image] : [];
+      changed = true;
+    }
+    if (it.image !== undefined) {
+      delete it.image;
+      changed = true;
+    }
+    for (let i = 0; i < it.images.length; i++) {
+      const img = it.images[i];
+      if (img && img.length > SIZE_LIMIT) {
+        try {
+          const smaller = await compressDataUrl(img);
+          if (smaller && smaller.length < img.length) {
+            it.images[i] = smaller;
+            changed = true;
+          }
+        } catch (e) { /* leave as-is if it fails */ }
+      }
+    }
+  }
+  if (changed) await saveItems();
+}
+
+async function saveItems() {
+  try {
+    await window.storage.set(ITEMS_KEY, JSON.stringify(items), true);
+  } catch (e) {
+    showToast("Couldn't save — please try again.");
+  }
+}
+
+async function saveCategories() {
+  try {
+    await window.storage.set(CATS_KEY, JSON.stringify(categories), true);
+  } catch (e) {
+    showToast("Couldn't save categories — please try again.");
+  }
+}
+
+async function savePledges() {
+  try {
+    await window.storage.set(PLEDGES_KEY, JSON.stringify(pledges), true);
+  } catch (e) {
+    showToast("Couldn't save — please try again.");
+  }
+}
+
+async function saveStats() {
+  try {
+    await window.storage.set(STATS_KEY, JSON.stringify(donationStats), true);
+  } catch (e) { /* non-critical, fail quietly */ }
+}
+
+async function saveDonateInfoData() {
+  try {
+    await window.storage.set(DONATE_INFO_KEY, JSON.stringify(donateInfo), true);
+  } catch (e) {
+    showToast("Couldn't save donation info — please try again.");
+  }
+}
+
+/* ---------------- view switching ---------------- */
+
+function setView(view) {
+  const browseView = document.getElementById("browseView");
+  const donateView = document.getElementById("donateView");
+  const staffView = document.getElementById("staffView");
+  const tabBrowse = document.getElementById("tabBrowse");
+  const tabDonate = document.getElementById("tabDonate");
+
+  browseView.style.display = "none";
+  donateView.style.display = "none";
+  staffView.style.display = "none";
+  tabBrowse.classList.remove("active");
+  tabDonate.classList.remove("active");
+
+  if (view === "browse") {
+    browseView.style.display = "block";
+    tabBrowse.classList.add("active");
+  } else if (view === "donate") {
+    donateView.style.display = "block";
+    tabDonate.classList.add("active");
+    populatePledgeCategory();
+  } else {
+    staffView.style.display = "block";
+    if (!isStaff) openPasswordModal();
+    document.getElementById("staffLocked").style.display = isStaff ? "none" : "block";
+    document.getElementById("staffUnlocked").style.display = isStaff ? "block" : "none";
+    if (isStaff) renderStaffPanel();
+  }
+}
+
+function openPasswordModal() {
+  document.getElementById("passwordModalBackdrop").style.display = "flex";
+  document.getElementById("passwordError").textContent = "";
+  document.getElementById("passwordInput").value = "";
+  setTimeout(() => document.getElementById("passwordInput").focus(), 50);
+}
+
+function closePasswordModal() {
+  document.getElementById("passwordModalBackdrop").style.display = "none";
+  if (!isStaff) setView("browse");
+}
+
+function checkPassword() {
+  const val = document.getElementById("passwordInput").value;
+  if (val === STAFF_PASSWORD) {
+    isStaff = true;
+    document.getElementById("passwordModalBackdrop").style.display = "none";
+    setView("staff");
+  } else {
+    document.getElementById("passwordError").textContent = t("incorrect_password");
+  }
+}
+
+function exitStaffMode() {
+  isStaff = false;
+  setView("browse");
+}
+
+/* ---------------- browse / grid ---------------- */
+
+function populateCategoryFilter() {
+  const sel = document.getElementById("categoryFilter");
+  const current = sel.value;
+  sel.innerHTML = `<option value="all">${t("option_all_categories")}</option>` +
+    categories.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
+  if (current && [...sel.options].some(o => o.value === current)) sel.value = current;
+}
+
+function populateNewItemCategory() {
+  const sel = document.getElementById("newItemCategory");
+  const current = sel.value;
+  sel.innerHTML = categories.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
+  if (current && [...sel.options].some(o => o.value === current)) sel.value = current;
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/[&<>"']/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[m]));
+}
+
+function getFilteredSortedItems() {
+  const q = document.getElementById("searchInput").value.trim().toLowerCase();
+  const cat = document.getElementById("categoryFilter").value;
+  const sort = document.getElementById("sortSelect").value;
+
+  let list = items.filter(it => {
+    const matchesQ = !q || it.name.toLowerCase().includes(q);
+    const matchesCat = cat === "all" || it.category === cat;
+    return matchesQ && matchesCat;
+  });
+
+  switch (sort) {
+    case "name": list.sort((a, b) => a.name.localeCompare(b.name)); break;
+    case "stock": list.sort((a, b) => b.quantity - a.quantity); break;
+    case "popular":
+    default:
+      list.sort((a, b) => (b.popular === true) - (a.popular === true) || a.name.localeCompare(b.name));
+      break;
+  }
+  return list;
+}
+
+function renderGrid() {
+  if (!dataReady) return;
+  populateCategoryFilter();
+  renderTracker();
+  const list = getFilteredSortedItems();
+  const wrap = document.getElementById("gridWrap");
+  const countPill = document.getElementById("countPill");
+
+  countPill.textContent = t("count_items", { n: list.length });
+
+  if (list.length === 0) {
+    wrap.innerHTML = `<div class="empty-state"><h3>${t("empty_title")}</h3><p>${t("empty_subtitle")}</p></div>`;
+    return;
+  }
+
+  wrap.innerHTML = `<div class="grid">` + list.map((it, i) => {
+    const color = catColor(it.category);
+    const low = it.quantity <= 3;
+    const thumb = it.images && it.images[0];
+    return `
+      <div class="card" style="animation-delay:${Math.min(i * 0.03, 0.3)}s" onclick="openItemDetail('${it.id}')">
+        <div class="card-photo">
+          ${thumb ? `<img src="${thumb}" alt="${escapeHtml(it.name)}" loading="lazy" decoding="async">` : placeholderSVG()}
+        </div>
+        <div class="card-body">
+          <div class="card-name">${escapeHtml(it.name)}</div>
+          <span class="chip" style="background:${color.bg};color:${color.fg}">${escapeHtml(it.category)}</span>
+          <div class="card-footer">
+            <div>
+              <div class="qty-num">${it.quantity}</div>
+              <div class="qty-label">${t("card_in_stock")}</div>
+            </div>
+            <div class="card-badges">
+              ${it.popular ? `<span class="popular-flag"><svg viewBox="0 0 20 20"><path d="M10 1l2.6 6.2 6.4.5-4.9 4.2 1.5 6.3L10 15l-5.6 3.2 1.5-6.3L1 7.7l6.4-.5z"/></svg>${t("badge_popular")}</span>` : ""}
+              ${low ? `<span class="low-flag">${t("badge_low_stock")}</span>` : ""}
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }).join("") + `</div>`;
+}
+
+function renderTracker() {
+  const totalStock = items.reduce((sum, it) => sum + (it.quantity || 0), 0);
+  document.getElementById("trackerStock").textContent = totalStock;
+  document.getElementById("trackerTypes").textContent = items.length;
+  document.getElementById("trackerPledges").textContent = donationStats.donationsReceived;
+  document.getElementById("trackerPledgedQty").textContent = donationStats.totalQuantityPledged;
+}
+
+let detailImages = [];
+
+function openItemDetail(id) {
+  const it = items.find(i => i.id === id);
+  if (!it) return;
+  const color = catColor(it.category);
+  const low = it.quantity <= 3;
+
+  detailImages = (it.images && it.images.length) ? it.images : [];
+  renderDetailPhoto(0);
+
+  document.getElementById("detailModalName").textContent = it.name;
+  const chip = document.getElementById("detailModalChip");
+  chip.textContent = it.category;
+  chip.style.background = color.bg;
+  chip.style.color = color.fg;
+  document.getElementById("detailModalQty").textContent = it.quantity;
+  document.getElementById("detailModalBadges").innerHTML =
+    (it.popular ? `<span class="popular-flag"><svg viewBox="0 0 20 20"><path d="M10 1l2.6 6.2 6.4.5-4.9 4.2 1.5 6.3L10 15l-5.6 3.2 1.5-6.3L1 7.7l6.4-.5z"/></svg>${t("badge_popular")}</span>` : "") +
+    (low ? `<span class="low-flag">${t("badge_low_stock")}</span>` : "");
+  document.getElementById("detailModalDescription").textContent = it.description && it.description.trim()
+    ? it.description
+    : t("detail_no_description");
+
+  document.getElementById("itemDetailBackdrop").style.display = "flex";
+}
+
+function renderDetailPhoto(idx) {
+  const photoEl = document.getElementById("detailModalPhoto");
+  photoEl.innerHTML = detailImages.length ? `<img src="${detailImages[idx]}" alt="">` : placeholderSVG();
+
+  const thumbsEl = document.getElementById("detailModalThumbs");
+  if (detailImages.length > 1) {
+    thumbsEl.style.display = "flex";
+    thumbsEl.innerHTML = detailImages.map((img, i) =>
+      `<button class="detail-thumb-btn ${i === idx ? "active" : ""}" onclick="renderDetailPhoto(${i})"><img src="${img}"></button>`
+    ).join("");
+  } else {
+    thumbsEl.style.display = "none";
+    thumbsEl.innerHTML = "";
+  }
+}
+
+function closeItemDetail() {
+  document.getElementById("itemDetailBackdrop").style.display = "none";
+}
+
+/* ---------------- staff panel ---------------- */
+
+function renderStaffPanel() {
+  populateNewItemCategory();
+  renderCategoryChips();
+  renderStockTable();
+  renderPledgesList();
+  document.getElementById("donateInfoEmail").value = donateInfo.email || "";
+  document.getElementById("donateInfoPhone").value = donateInfo.phone || "";
+  document.getElementById("donationsReceivedInput").value = donationStats.donationsReceived;
+  document.getElementById("pledgedQtyInput").value = donationStats.totalQuantityPledged;
+}
+
+function renderCategoryChips() {
+  const wrap = document.getElementById("categoryChipList");
+  wrap.innerHTML = categories.map(c => {
+    const color = catColor(c);
+    return `<span class="chip" style="background:${color.bg};color:${color.fg}">${escapeHtml(c)}</span>`;
+  }).join("");
+}
+
+async function saveDonateInfo() {
+  donateInfo.email = document.getElementById("donateInfoEmail").value.trim();
+  donateInfo.phone = document.getElementById("donateInfoPhone").value.trim();
+  await saveDonateInfoData();
+  setupDonateContacts();
+  showToast("Donation contact info updated.");
+}
+
+async function saveDonationsReceived() {
+  const n = parseInt(document.getElementById("donationsReceivedInput").value, 10);
+  donationStats.donationsReceived = isNaN(n) ? 0 : Math.max(0, Math.min(n, 1000000));
+  await saveStats();
+  renderTracker();
+  showToast("Donations received updated.");
+}
+
+async function savePledgedQty() {
+  const n = parseInt(document.getElementById("pledgedQtyInput").value, 10);
+  donationStats.totalQuantityPledged = isNaN(n) ? 0 : Math.max(0, Math.min(n, 1000000));
+  await saveStats();
+  renderTracker();
+  showToast("Items pledged total updated.");
+}
+
+async function addCategory() {
+  const input = document.getElementById("newCategoryInput");
+  const val = input.value.trim();
+  if (!val) return;
+  if (categories.some(c => c.toLowerCase() === val.toLowerCase())) {
+    showToast("That category already exists.");
+    return;
+  }
+  categories.push(val);
+  await saveCategories();
+  input.value = "";
+  renderCategoryChips();
+  populateNewItemCategory();
+  populateCategoryFilter();
+  renderStockTable();
+  showToast(`Category "${val}" added.`);
+}
+
+let newItemImages = [];
+
+async function handleNewPhotosPreview(inputEl) {
+  const label = document.getElementById("newItemPhotoLabel");
+  const files = Array.from(inputEl.files || []);
+  if (!files.length) return;
+  const remaining = 4 - newItemImages.length;
+  const toProcess = files.slice(0, remaining);
+  if (files.length > remaining) showToast("Only added " + remaining + " — 4 photos max per item.");
+  label.textContent = "Processing photo(s)…";
+  for (const file of toProcess) {
+    try {
+      const dataUrl = await readAndCompressImage(file);
+      newItemImages.push(dataUrl);
+    } catch (e) { /* skip file that failed to read */ }
+  }
+  inputEl.value = "";
+  label.textContent = newItemImages.length ? `${newItemImages.length}/4 photo(s) selected` : t("choose_photo");
+  renderNewItemPhotoPreview();
+}
+
+function renderNewItemPhotoPreview() {
+  const wrap = document.getElementById("newItemPhotoPreview");
+  wrap.innerHTML = newItemImages.map((img, idx) => `
+    <div class="photo-slot" style="width:40px;height:40px;">
+      <img src="${img}">
+      <button type="button" class="photo-slot-remove" style="width:16px;height:16px;font-size:9px;" onclick="removeNewItemImage(${idx})">✕</button>
+    </div>
+  `).join("");
+}
+
+function removeNewItemImage(idx) {
+  newItemImages.splice(idx, 1);
+  renderNewItemPhotoPreview();
+  const label = document.getElementById("newItemPhotoLabel");
+  label.textContent = newItemImages.length ? `${newItemImages.length}/4 photo(s) selected` : t("choose_photo");
+}
+
+async function addItem() {
+  const name = document.getElementById("newItemName").value.trim();
+  const category = document.getElementById("newItemCategory").value;
+  const qty = parseInt(document.getElementById("newItemQty").value, 10) || 0;
+  const description = document.getElementById("newItemDescription").value.trim();
+
+  if (!name) { showToast("Give the item a name first."); return; }
+  if (!category) { showToast("Add a category first."); return; }
+
+  items.push({
+    id: cryptoId(),
+    name,
+    category,
+    quantity: Math.max(0, qty),
+    images: newItemImages.slice(0, 4),
+    description,
+    popular: false,
+    createdAt: Date.now(),
+  });
+
+  await saveItems();
+
+  document.getElementById("newItemName").value = "";
+  document.getElementById("newItemQty").value = 0;
+  document.getElementById("newItemPhoto").value = "";
+  document.getElementById("newItemPhotoLabel").textContent = t("choose_photo");
+  document.getElementById("newItemDescription").value = "";
+  newItemImages = [];
+  renderNewItemPhotoPreview();
+
+  renderStockTable();
+  renderGrid();
+  showToast(`"${name}" added to inventory.`);
+}
+
+function renderStockTable() {
+  const tbody = document.getElementById("stockTableBody");
+  if (items.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--ink-soft);padding:24px;">No items yet — add your first one above.</td></tr>`;
+    return;
+  }
+
+  const sorted = [...items].sort((a, b) => a.name.localeCompare(b.name));
+
+  tbody.innerHTML = sorted.map(it => `
+    <tr data-id="${it.id}">
+      <td>
+        <div class="item-name-cell">
+          <span class="name">${escapeHtml(it.name)}</span>
+        </div>
+      </td>
+      <td>
+        <select onchange="changeCategory('${it.id}', this.value)">
+          ${categories.map(c => `<option value="${escapeHtml(c)}" ${c === it.category ? "selected" : ""}>${escapeHtml(c)}</option>`).join("")}
+        </select>
+      </td>
+      <td>
+        <div class="qty-editor">
+          <button onclick="stepQty('${it.id}', -1)">−</button>
+          <input type="number" min="0" value="${it.quantity}" onchange="setQty('${it.id}', this.value)">
+          <button onclick="stepQty('${it.id}', 1)">+</button>
+        </div>
+      </td>
+      <td>
+        <div class="thumb">
+          ${(it.images && it.images[0]) ? `<img src="${it.images[0]}" loading="lazy" decoding="async">` : `<svg viewBox="0 0 48 48" fill="none" stroke="#3e5c4c" stroke-width="2.2"><rect x="4" y="14" width="40" height="28"/><path d="M4 14L24 4L44 14"/></svg>`}
+        </div>
+      </td>
+      <td>
+        <div class="row-actions">
+          <button class="btn btn-sm ${it.popular ? "btn-primary" : ""}" onclick="togglePopular('${it.id}')">${it.popular ? "★ Popular" : "☆ Mark popular"}</button>
+          <button class="btn btn-sm" onclick="openEditDescription('${it.id}')">Edit description</button>
+          <button class="btn btn-sm" onclick="openManagePhotos('${it.id}')">Manage photos</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteItem('${it.id}')">Delete</button>
+        </div>
+      </td>
+    </tr>
+  `).join("");
+}
+
+async function changeCategory(id, newCat) {
+  const it = items.find(i => i.id === id);
+  if (!it) return;
+  it.category = newCat;
+  await saveItems();
+  renderGrid();
+  showToast("Category updated.");
+}
+
+async function togglePopular(id) {
+  const it = items.find(i => i.id === id);
+  if (!it) return;
+  it.popular = !it.popular;
+  await saveItems();
+  renderStockTable();
+  renderGrid();
+}
+
+let editDescriptionId = null;
+let managePhotosItemId = null;
+
+function openEditDescription(id) {
+  const it = items.find(i => i.id === id);
+  if (!it) return;
+  editDescriptionId = id;
+  document.getElementById("editDescriptionItemName").textContent = `Editing: ${it.name}`;
+  document.getElementById("editDescriptionInput").value = it.description || "";
+  document.getElementById("editDescriptionBackdrop").style.display = "flex";
+}
+
+function closeEditDescription() {
+  document.getElementById("editDescriptionBackdrop").style.display = "none";
+  editDescriptionId = null;
+}
+
+async function saveEditDescription() {
+  const it = items.find(i => i.id === editDescriptionId);
+  if (!it) { closeEditDescription(); return; }
+  it.description = document.getElementById("editDescriptionInput").value.trim();
+  await saveItems();
+  closeEditDescription();
+  renderGrid();
+  showToast("Description updated.");
+}
+
+async function stepQty(id, delta) {
+  const it = items.find(i => i.id === id);
+  if (!it) return;
+  it.quantity = Math.max(0, it.quantity + delta);
+  await saveItems();
+  renderStockTable();
+  renderGrid();
+}
+
+async function setQty(id, value) {
+  const it = items.find(i => i.id === id);
+  if (!it) return;
+  const n = parseInt(value, 10);
+  it.quantity = isNaN(n) ? 0 : Math.max(0, n);
+  await saveItems();
+  renderStockTable();
+  renderGrid();
+}
+
+function openManagePhotos(id) {
+  const it = items.find(i => i.id === id);
+  if (!it) return;
+  managePhotosItemId = id;
+  document.getElementById("managePhotosItemName").textContent = `Editing: ${it.name}`;
+  if (!Array.isArray(it.images)) it.images = [];
+  renderManagePhotosGrid();
+  document.getElementById("managePhotosBackdrop").style.display = "flex";
+}
+
+function closeManagePhotos() {
+  document.getElementById("managePhotosBackdrop").style.display = "none";
+  managePhotosItemId = null;
+  renderStockTable();
+  renderGrid();
+}
+
+function renderManagePhotosGrid() {
+  const it = items.find(i => i.id === managePhotosItemId);
+  if (!it) return;
+  const imgs = it.images || [];
+  const grid = document.getElementById("managePhotosGrid");
+  grid.innerHTML = imgs.map((img, idx) => `
+    <div class="photo-slot">
+      <img src="${img}" loading="lazy" decoding="async">
+      <button type="button" class="photo-slot-remove" onclick="removeManagePhoto(${idx})">✕</button>
+    </div>
+  `).join("");
+  document.getElementById("managePhotosAddBtn").style.display = imgs.length >= 4 ? "none" : "inline-block";
+}
+
+async function handleManagePhotosUpload(inputEl) {
+  const it = items.find(i => i.id === managePhotosItemId);
+  if (!it) return;
+  if (!Array.isArray(it.images)) it.images = [];
+  const files = Array.from(inputEl.files || []);
+  const remaining = 4 - it.images.length;
+  const toProcess = files.slice(0, remaining);
+  if (files.length > remaining) showToast("Only added " + remaining + " — 4 photos max per item.");
+  for (const file of toProcess) {
+    try {
+      const dataUrl = await readAndCompressImage(file);
+      it.images.push(dataUrl);
+    } catch (e) { /* skip file that failed to read */ }
+  }
+  inputEl.value = "";
+  await saveItems();
+  renderManagePhotosGrid();
+}
+
+async function removeManagePhoto(idx) {
+  const it = items.find(i => i.id === managePhotosItemId);
+  if (!it || !it.images) return;
+  it.images.splice(idx, 1);
+  await saveItems();
+  renderManagePhotosGrid();
+}
+
+function deleteItem(id) {
+  const it = items.find(i => i.id === id);
+  if (!it) return;
+  showConfirm(`Delete "${it.name}" from inventory? This can't be undone.`, async () => {
+    items = items.filter(i => i.id !== id);
+    await saveItems();
+    renderStockTable();
+    renderGrid();
+    showToast("Item deleted.");
+  });
+}
+
+function populatePledgeCategory() {
+  const sel = document.getElementById("pledgeCategory");
+  const current = sel.value;
+  sel.innerHTML = categories.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("") +
+    `<option value="Not sure / Other">${t("option_not_sure")}</option>`;
+  if (current && [...sel.options].some(o => o.value === current)) sel.value = current;
+}
+
+function setupDonateContacts() {
+  const emailLink = document.getElementById("donateEmailLink");
+  const phoneLink = document.getElementById("donatePhoneLink");
+
+  if (donateInfo.email) {
+    emailLink.href = `mailto:${donateInfo.email}`;
+    document.getElementById("donateEmailText").textContent = donateInfo.email;
+    emailLink.style.opacity = "1";
+    emailLink.style.pointerEvents = "auto";
+  } else {
+    emailLink.href = "#";
+    document.getElementById("donateEmailText").textContent = t("donate_coming_soon");
+    emailLink.style.opacity = "0.6";
+    emailLink.style.pointerEvents = "none";
+  }
+
+  if (donateInfo.phone) {
+    phoneLink.href = `tel:${donateInfo.phone.replace(/[^+\d]/g, "")}`;
+    document.getElementById("donatePhoneText").textContent = donateInfo.phone;
+    phoneLink.style.opacity = "1";
+    phoneLink.style.pointerEvents = "auto";
+  } else {
+    phoneLink.href = "#";
+    document.getElementById("donatePhoneText").textContent = t("donate_coming_soon");
+    phoneLink.style.opacity = "0.6";
+    phoneLink.style.pointerEvents = "none";
+  }
+}
+
+async function handlePledgePhotoPreview() {
+  const fileInput = document.getElementById("pledgePhoto");
+  const label = document.getElementById("pledgePhotoLabel");
+  const file = fileInput.files[0];
+  if (!file) return;
+  label.textContent = "Processing photo…";
+  try {
+    newPledgePhotoDataUrl = await readAndCompressImage(file);
+    label.textContent = "✓ " + file.name;
+  } catch (e) {
+    newPledgePhotoDataUrl = null;
+    label.textContent = "Couldn't read that photo — try another.";
+  }
+}
+
+async function submitPledge() {
+  const name = document.getElementById("pledgeName").value.trim();
+  const contact = document.getElementById("pledgeContact").value.trim();
+  const category = document.getElementById("pledgeCategory").value;
+  const itemDesc = document.getElementById("pledgeItem").value.trim();
+  const qty = parseInt(document.getElementById("pledgeQty").value, 10) || 0;
+  const notes = document.getElementById("pledgeNotes").value.trim();
+
+  if (!name) { showToast("Please tell us your name."); return; }
+  if (!contact) { showToast("Please leave an email or phone number so we can reach you."); return; }
+  if (!itemDesc) { showToast("Please tell us what you'd like to donate."); return; }
+  if (qty < 1) { showToast("Quantity should be at least 1."); return; }
+  if (qty > 10000) { showToast("That quantity looks too high — please enter a realistic number."); return; }
+
+  pledges.push({
+    id: cryptoId(),
+    name, contact, category, item: itemDesc,
+    quantity: qty, notes,
+    image: newPledgePhotoDataUrl,
+    createdAt: Date.now(),
+  });
+  await savePledges();
+
+  donationStats.totalQuantityPledged = Math.min(1000000, donationStats.totalQuantityPledged + qty);
+  await saveStats();
+
+  document.getElementById("pledgeFormPanel").style.display = "none";
+  document.getElementById("pledgeThanksPanel").style.display = "block";
+  renderTracker();
+}
+
+function resetPledgeForm() {
+  document.getElementById("pledgeName").value = "";
+  document.getElementById("pledgeContact").value = "";
+  document.getElementById("pledgeItem").value = "";
+  document.getElementById("pledgeQty").value = 1;
+  document.getElementById("pledgeNotes").value = "";
+  document.getElementById("pledgePhoto").value = "";
+  document.getElementById("pledgePhotoLabel").textContent = t("choose_photo");
+  newPledgePhotoDataUrl = null;
+  document.getElementById("pledgeThanksPanel").style.display = "none";
+  document.getElementById("pledgeFormPanel").style.display = "block";
+}
+
+function renderPledgesList() {
+  const tbody = document.getElementById("pledgeTableBody");
+  if (!tbody) return;
+  if (pledges.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--ink-soft);padding:20px;">No pledges yet.</td></tr>`;
+    return;
+  }
+  const sorted = [...pledges].sort((a, b) => b.createdAt - a.createdAt);
+  tbody.innerHTML = sorted.map(p => `
+    <tr>
+      <td>
+        <div>${escapeHtml(p.name)}</div>
+        <div class="pledge-meta">${escapeHtml(p.contact)}</div>
+      </td>
+      <td>
+        <div>${escapeHtml(p.item)}</div>
+        ${p.notes ? `<div class="pledge-meta">${escapeHtml(p.notes)}</div>` : ""}
+      </td>
+      <td>${p.quantity}</td>
+      <td>${escapeHtml(p.category || "—")}</td>
+      <td>
+        <div class="thumb">
+          ${p.image ? `<img src="${p.image}" loading="lazy" decoding="async">` : `<svg viewBox="0 0 48 48" fill="none" stroke="#3e5c4c" stroke-width="2.2"><rect x="4" y="14" width="40" height="28"/><path d="M4 14L24 4L44 14"/></svg>`}
+        </div>
+      </td>
+      <td><button class="btn btn-danger btn-sm" onclick="removePledge('${p.id}')">Remove</button></td>
+    </tr>
+  `).join("");
+}
+
+function removePledge(id) {
+  showConfirm("Remove this pledge from the list? The front-page totals won't change.", async () => {
+    pledges = pledges.filter(p => p.id !== id);
+    await savePledges();
+    renderPledgesList();
+    showToast("Pledge removed from the list.");
+  });
+}
+
+function openResetModal() {
+  document.getElementById("resetModalBackdrop").style.display = "flex";
+  document.getElementById("resetPasswordInput").value = "";
+  document.getElementById("resetPasswordError").textContent = "";
+  setTimeout(() => document.getElementById("resetPasswordInput").focus(), 50);
+}
+
+function closeResetModal() {
+  document.getElementById("resetModalBackdrop").style.display = "none";
+}
+
+async function confirmReset() {
+  const val = document.getElementById("resetPasswordInput").value;
+  if (val !== RESET_PASSWORD) {
+    document.getElementById("resetPasswordError").textContent = "That's not the confirmation password.";
+    return;
+  }
+  try { await window.storage.delete(ITEMS_KEY, true); } catch (e) {}
+  try { await window.storage.delete(CATS_KEY, true); } catch (e) {}
+  location.reload();
+}
+
+/* ---------------- init ---------------- */
+
+window.addEventListener("error", (e) => {
+  console.error("POWIIS inventory error:", e.error || e.message);
+});
+window.addEventListener("unhandledrejection", (e) => {
+  console.error("POWIIS inventory error:", e.reason);
+});
+
+(async function init() {
+  try {
+    applyStaticTranslations();
+    await loadData();
+    await migrateOversizedImages();
+    populateCategoryFilter();
+    setupDonateContacts();
+    renderGrid();
+  } catch (e) {
+    console.error("POWIIS inventory failed to load:", e);
+    document.getElementById("gridWrap").innerHTML =
+      `<div class="empty-state"><h3>Something went wrong loading the inventory</h3><p>Try refreshing the page. If this keeps happening, check the browser console for details.</p></div>`;
+  }
+})();
+</script>
+</body>
+</html>
